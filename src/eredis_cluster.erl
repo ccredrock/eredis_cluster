@@ -188,6 +188,16 @@ query(Transaction, Slot, Counter) ->
             eredis_cluster_monitor:refresh_mapping(Version),
             query(Transaction, Slot,  Counter+1);
 
+        Payload when is_list(Payload) ->
+            Pred = fun({error, <<"MOVED ", _/binary>>}) -> true;
+                     (_) -> false
+                  end,
+            case lists:any(Pred, Payload) of
+                false -> Payload;
+                true ->
+                    eredis_cluster_monitor:refresh_mapping(Version),
+                    query(Transaction, Slot,  Counter+1)
+            end;
         Payload ->
             Payload
     end.
